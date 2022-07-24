@@ -343,13 +343,6 @@ function SendMessage(gameObject, func, param) {
  if (param === undefined) Module.ccall("SendMessage", null, [ "string", "string" ], [ gameObject, func ]); else if (typeof param === "string") Module.ccall("SendMessageString", null, [ "string", "string", "string" ], [ gameObject, func, param ]); else if (typeof param === "number") Module.ccall("SendMessageFloat", null, [ "string", "string", "number" ], [ gameObject, func, param ]); else throw "" + param + " is does not have a type which is supported by SendMessage.";
 }
 Module["SendMessage"] = SendMessage;
-var ___cxa_throw = (function() {
- var original___cxa_throw = ___cxa_throw;
- return (function() {
-  console.log("Exception at: \n" + stackTrace());
-  original___cxa_throw();
- });
-})();
 var Module;
 if (!Module) Module = (typeof Module !== "undefined" ? Module : null) || {};
 var moduleOverrides = {};
@@ -1527,7 +1520,7 @@ function _emscripten_asm_const_v(code) {
  return ASM_CONSTS[code]();
 }
 STATIC_BASE = 8;
-STATICTOP = Runtime.alignMemory(STATIC_BASE, 16) + 2529536;
+STATICTOP = Runtime.alignMemory(STATIC_BASE, 16) + 2529888;
 __ATINIT__.push({
  func: (function() {
   __GLOBAL__sub_I_runtime_ai_internal_0_cpp();
@@ -2298,7 +2291,7 @@ __ATINIT__.push({
  })
 }, {
  func: (function() {
-  __GLOBAL__sub_I_Thread_cpp_64863();
+  __GLOBAL__sub_I_Thread_cpp_71977();
  })
 }, {
  func: (function() {
@@ -2322,7 +2315,7 @@ __ATINIT__.push({
  })
 }, {
  func: (function() {
-  __GLOBAL__sub_I_Assembly_cpp_65504();
+  __GLOBAL__sub_I_Assembly_cpp_72618();
  })
 }, {
  func: (function() {
@@ -2330,7 +2323,7 @@ __ATINIT__.push({
  })
 }, {
  func: (function() {
-  __GLOBAL__sub_I_Runtime_cpp_66073();
+  __GLOBAL__sub_I_Runtime_cpp_73187();
  })
 }, {
  func: (function() {
@@ -2591,6 +2584,61 @@ function _inet_addr(ptr) {
  return addr;
 }
 Module["_pthread_mutex_lock"] = _pthread_mutex_lock;
+function _free() {}
+Module["_free"] = _free;
+function ___cxa_free_exception(ptr) {
+ try {
+  return _free(ptr);
+ } catch (e) {
+  Module.printErr("exception during cxa_free_exception: " + e);
+ }
+}
+var EXCEPTIONS = {
+ last: 0,
+ caught: [],
+ infos: {},
+ deAdjust: (function(adjusted) {
+  if (!adjusted || EXCEPTIONS.infos[adjusted]) return adjusted;
+  for (var ptr in EXCEPTIONS.infos) {
+   var info = EXCEPTIONS.infos[ptr];
+   if (info.adjusted === adjusted) {
+    return ptr;
+   }
+  }
+  return adjusted;
+ }),
+ addRef: (function(ptr) {
+  if (!ptr) return;
+  var info = EXCEPTIONS.infos[ptr];
+  info.refcount++;
+ }),
+ decRef: (function(ptr) {
+  if (!ptr) return;
+  var info = EXCEPTIONS.infos[ptr];
+  assert(info.refcount > 0);
+  info.refcount--;
+  if (info.refcount === 0 && !info.rethrown) {
+   if (info.destructor) {
+    Module["dynCall_vi"](info.destructor, ptr);
+   }
+   delete EXCEPTIONS.infos[ptr];
+   ___cxa_free_exception(ptr);
+  }
+ }),
+ clearRef: (function(ptr) {
+  if (!ptr) return;
+  var info = EXCEPTIONS.infos[ptr];
+  info.refcount = 0;
+ })
+};
+function ___cxa_end_catch() {
+ asm["setThrew"](0);
+ var ptr = EXCEPTIONS.caught.pop();
+ if (ptr) {
+  EXCEPTIONS.decRef(EXCEPTIONS.deAdjust(ptr));
+  EXCEPTIONS.last = 0;
+ }
+}
 function _emscripten_glStencilFunc(x0, x1, x2) {
  GLctx["stencilFunc"](x0, x1, x2);
 }
@@ -8604,6 +8652,15 @@ function _emscripten_glClearDepthf(x0) {
 function _emscripten_glVertexAttrib4f(x0, x1, x2, x3, x4) {
  GLctx["vertexAttrib4f"](x0, x1, x2, x3, x4);
 }
+function ___cxa_rethrow() {
+ var ptr = EXCEPTIONS.caught.pop();
+ if (!EXCEPTIONS.infos[ptr].rethrown) {
+  EXCEPTIONS.caught.push(ptr);
+  EXCEPTIONS.infos[ptr].rethrown = true;
+ }
+ EXCEPTIONS.last = ptr;
+ throw ptr;
+}
 function _emscripten_glClear(x0) {
  GLctx["clear"](x0);
 }
@@ -9500,44 +9557,6 @@ function _emscripten_glIsProgram(program) {
 function __ZSt18uncaught_exceptionv() {
  return !!__ZSt18uncaught_exceptionv.uncaught_exception;
 }
-var EXCEPTIONS = {
- last: 0,
- caught: [],
- infos: {},
- deAdjust: (function(adjusted) {
-  if (!adjusted || EXCEPTIONS.infos[adjusted]) return adjusted;
-  for (var ptr in EXCEPTIONS.infos) {
-   var info = EXCEPTIONS.infos[ptr];
-   if (info.adjusted === adjusted) {
-    return ptr;
-   }
-  }
-  return adjusted;
- }),
- addRef: (function(ptr) {
-  if (!ptr) return;
-  var info = EXCEPTIONS.infos[ptr];
-  info.refcount++;
- }),
- decRef: (function(ptr) {
-  if (!ptr) return;
-  var info = EXCEPTIONS.infos[ptr];
-  assert(info.refcount > 0);
-  info.refcount--;
-  if (info.refcount === 0 && !info.rethrown) {
-   if (info.destructor) {
-    Module["dynCall_vi"](info.destructor, ptr);
-   }
-   delete EXCEPTIONS.infos[ptr];
-   ___cxa_free_exception(ptr);
-  }
- }),
- clearRef: (function(ptr) {
-  if (!ptr) return;
-  var info = EXCEPTIONS.infos[ptr];
-  info.refcount = 0;
- })
-};
 function ___cxa_begin_catch(ptr) {
  var info = EXCEPTIONS.infos[ptr];
  if (info && !info.caught) {
@@ -9880,16 +9899,8 @@ function _glDeleteSync(id) {
  sync.name = 0;
  GL.syncs[id] = null;
 }
-function _glGetActiveUniformBlockName(program, uniformBlockIndex, bufSize, length, uniformBlockName) {
- program = GL.programs[program];
- var result = GLctx["getActiveUniformBlockName"](program, uniformBlockIndex);
- if (!result) return;
- if (uniformBlockName && bufSize > 0) {
-  var numBytesWrittenExclNull = stringToUTF8(result, uniformBlockName, bufSize);
-  if (length) HEAP32[length >> 2] = numBytesWrittenExclNull;
- } else {
-  if (length) HEAP32[length >> 2] = 0;
- }
+function ___cxa_find_matching_catch_4() {
+ return ___cxa_find_matching_catch.apply(null, arguments);
 }
 function emscriptenWebGLGetVertexAttrib(index, pname, params, type) {
  if (!params) {
@@ -9933,6 +9944,12 @@ function emscriptenWebGLGetVertexAttrib(index, pname, params, type) {
 }
 function _glGetVertexAttribiv(index, pname, params) {
  emscriptenWebGLGetVertexAttrib(index, pname, params, "FloatToInteger");
+}
+function ___cxa_find_matching_catch_2() {
+ return ___cxa_find_matching_catch.apply(null, arguments);
+}
+function ___cxa_find_matching_catch_3() {
+ return ___cxa_find_matching_catch.apply(null, arguments);
 }
 function _JS_FileSystem_Sync() {
  if (!Module.indexedDB) return;
@@ -10140,6 +10157,12 @@ function _glBindTransformFeedback(target, id) {
 }
 function _glBindVertexArray(vao) {
  GLctx["bindVertexArray"](GL.vaos[vao]);
+}
+function ___resumeException(ptr) {
+ if (!EXCEPTIONS.last) {
+  EXCEPTIONS.last = ptr;
+ }
+ throw ptr;
 }
 function _emscripten_glCreateProgram() {
  var id = GL.getNewId(GL.programs);
@@ -10392,6 +10415,17 @@ function _glLinkProgram(program) {
 }
 function _glBindTexture(target, texture) {
  GLctx.bindTexture(target, texture ? GL.textures[texture] : null);
+}
+function _glGetActiveUniformBlockName(program, uniformBlockIndex, bufSize, length, uniformBlockName) {
+ program = GL.programs[program];
+ var result = GLctx["getActiveUniformBlockName"](program, uniformBlockIndex);
+ if (!result) return;
+ if (uniformBlockName && bufSize > 0) {
+  var numBytesWrittenExclNull = stringToUTF8(result, uniformBlockName, bufSize);
+  if (length) HEAP32[length >> 2] = numBytesWrittenExclNull;
+ } else {
+  if (length) HEAP32[length >> 2] = 0;
+ }
 }
 function _glUniform3iv(location, count, value) {
  location = GL.uniforms[location];
@@ -10686,8 +10720,6 @@ function _malloc(bytes) {
  return ptr + 8 & 4294967288;
 }
 Module["_malloc"] = _malloc;
-function _free() {}
-Module["_free"] = _free;
 function _getenv(name) {
  if (name === 0) return 0;
  name = Pointer_stringify(name);
@@ -12386,12 +12418,6 @@ function _glUnmapBuffer(target) {
  _free(mapping.mem);
  return 1;
 }
-function ___resumeException(ptr) {
- if (!EXCEPTIONS.last) {
-  EXCEPTIONS.last = ptr;
- }
- throw ptr + " - Exception catching is disabled, this exception cannot be caught. Compile with -s DISABLE_EXCEPTION_CATCHING=0 or DISABLE_EXCEPTION_CATCHING=2 to catch.";
-}
 function ___cxa_find_matching_catch() {
  var thrown = EXCEPTIONS.last;
  if (!thrown) {
@@ -12433,7 +12459,7 @@ function ___cxa_throw(ptr, type, destructor) {
  } else {
   __ZSt18uncaught_exceptionv.uncaught_exception++;
  }
- throw ptr + " - Exception catching is disabled, this exception cannot be caught. Compile with -s DISABLE_EXCEPTION_CATCHING=0 or DISABLE_EXCEPTION_CATCHING=2 to catch.";
+ throw ptr;
 }
 function _emscripten_set_touchend_callback(target, userData, useCapture, callbackfunc) {
  JSEvents.registerTouchEventCallback(target, userData, useCapture, callbackfunc, 23, "touchend");
@@ -14622,6 +14648,9 @@ function ___syscall183(which, varargs) {
 }
 function _glDepthMask(flag) {
  GLctx.depthMask(!!flag);
+}
+function _llvm_eh_typeid_for(type) {
+ return type;
 }
 function _glUniformMatrix4fv(location, count, transpose, value) {
  location = GL.uniforms[location];
@@ -17868,6 +17897,7 @@ Module.asmLibraryArg = {
  "_glEndTransformFeedback": _glEndTransformFeedback,
  "_glFramebufferRenderbuffer": _glFramebufferRenderbuffer,
  "_gmtime_r": _gmtime_r,
+ "___cxa_rethrow": ___cxa_rethrow,
  "_emscripten_glTexParameteriv": _emscripten_glTexParameteriv,
  "_emscripten_glHint": _emscripten_glHint,
  "_glUniform3fv": _glUniform3fv,
@@ -18008,6 +18038,7 @@ Module.asmLibraryArg = {
  "_glGenerateMipmap": _glGenerateMipmap,
  "_JS_Sound_SetPosition": _JS_Sound_SetPosition,
  "___syscall122": ___syscall122,
+ "___cxa_free_exception": ___cxa_free_exception,
  "___cxa_find_matching_catch": ___cxa_find_matching_catch,
  "_JS_SystemInfo_HasCursorLock": _JS_SystemInfo_HasCursorLock,
  "_emscripten_glClear": _emscripten_glClear,
@@ -18058,7 +18089,7 @@ Module.asmLibraryArg = {
  "_emscripten_glGetVertexAttribiv": _emscripten_glGetVertexAttribiv,
  "_glReadPixels": _glReadPixels,
  "_glGetActiveAttrib": _glGetActiveAttrib,
- "___syscall194": ___syscall194,
+ "_JS_Video_Seek": _JS_Video_Seek,
  "_emscripten_glUniformMatrix3fv": _emscripten_glUniformMatrix3fv,
  "_glUniform2iv": _glUniform2iv,
  "___syscall33": ___syscall33,
@@ -18081,14 +18112,16 @@ Module.asmLibraryArg = {
  "_JS_Video_Duration": _JS_Video_Duration,
  "_glScissor": _glScissor,
  "_emscripten_glClearColor": _emscripten_glClearColor,
- "_glGetFramebufferAttachmentParameteriv": _glGetFramebufferAttachmentParameteriv,
- "_difftime": _difftime,
+ "___cxa_find_matching_catch_4": ___cxa_find_matching_catch_4,
  "_emscripten_set_mousemove_callback": _emscripten_set_mousemove_callback,
  "_glBlitFramebuffer": _glBlitFramebuffer,
+ "___cxa_find_matching_catch_2": ___cxa_find_matching_catch_2,
+ "___cxa_find_matching_catch_3": ___cxa_find_matching_catch_3,
  "_emscripten_glDeleteTextures": _emscripten_glDeleteTextures,
  "_emscripten_exit_fullscreen": _emscripten_exit_fullscreen,
  "_strftime_l": _strftime_l,
  "_glGetShaderiv": _glGetShaderiv,
+ "_llvm_eh_typeid_for": _llvm_eh_typeid_for,
  "_glBindBufferBase": _glBindBufferBase,
  "_glUniform4fv": _glUniform4fv,
  "_glRenderbufferStorage": _glRenderbufferStorage,
@@ -18178,7 +18211,7 @@ Module.asmLibraryArg = {
  "_emscripten_glDeleteShader": _emscripten_glDeleteShader,
  "_glEnable": _glEnable,
  "_glUnmapBuffer": _glUnmapBuffer,
- "_glGetString": _glGetString,
+ "_glGetFramebufferAttachmentParameteriv": _glGetFramebufferAttachmentParameteriv,
  "_emscripten_glGetUniformLocation": _emscripten_glGetUniformLocation,
  "_emscripten_glEnableVertexAttribArray": _emscripten_glEnableVertexAttribArray,
  "_emscripten_get_now": _emscripten_get_now,
@@ -18187,7 +18220,7 @@ Module.asmLibraryArg = {
  "_glDetachShader": _glDetachShader,
  "_gettimeofday": _gettimeofday,
  "___syscall202": ___syscall202,
- "_emscripten_glEnableClientState": _emscripten_glEnableClientState,
+ "_glGetString": _glGetString,
  "_JS_Video_SetVolume": _JS_Video_SetVolume,
  "_JS_Sound_Init": _JS_Sound_Init,
  "_TTF_FontHeight": _TTF_FontHeight,
@@ -18198,6 +18231,7 @@ Module.asmLibraryArg = {
  "_tzset": _tzset,
  "_glIsEnabled": _glIsEnabled,
  "_emscripten_glDisable": _emscripten_glDisable,
+ "___cxa_end_catch": ___cxa_end_catch,
  "_emscripten_glDeleteRenderbuffers": _emscripten_glDeleteRenderbuffers,
  "_emscripten_glDrawElementsInstanced": _emscripten_glDrawElementsInstanced,
  "_emscripten_glVertexAttrib4f": _emscripten_glVertexAttrib4f,
@@ -18221,6 +18255,7 @@ Module.asmLibraryArg = {
  "_JS_Video_IsPlaying": _JS_Video_IsPlaying,
  "_emscripten_request_pointerlock": _emscripten_request_pointerlock,
  "___syscall40": ___syscall40,
+ "_difftime": _difftime,
  "___syscall42": ___syscall42,
  "_glGetUniformIndices": _glGetUniformIndices,
  "_emscripten_set_touchcancel_callback": _emscripten_set_touchcancel_callback,
@@ -18248,6 +18283,8 @@ Module.asmLibraryArg = {
  "_pthread_create": _pthread_create,
  "_glProgramParameteri": _glProgramParameteri,
  "_pthread_setspecific": _pthread_setspecific,
+ "_emscripten_set_touchend_callback": _emscripten_set_touchend_callback,
+ "_emscripten_glEnableClientState": _emscripten_glEnableClientState,
  "_glColorMask": _glColorMask,
  "_emscripten_glGenBuffers": _emscripten_glGenBuffers,
  "_glCopyTexSubImage2D": _glCopyTexSubImage2D,
@@ -18362,7 +18399,7 @@ Module.asmLibraryArg = {
  "___syscall197": ___syscall197,
  "_glUniformBlockBinding": _glUniformBlockBinding,
  "___syscall195": ___syscall195,
- "_JS_Video_Seek": _JS_Video_Seek,
+ "___syscall194": ___syscall194,
  "___syscall199": ___syscall199,
  "_emscripten_glDeleteProgram": _emscripten_glDeleteProgram,
  "_glUniform1i": _glUniform1i,
@@ -18370,7 +18407,6 @@ Module.asmLibraryArg = {
  "_emscripten_glTexSubImage2D": _emscripten_glTexSubImage2D,
  "_pthread_mutex_destroy": _pthread_mutex_destroy,
  "_emscripten_glColorPointer": _emscripten_glColorPointer,
- "_glVertexAttribPointer": _glVertexAttribPointer,
  "_glTransformFeedbackVaryings": _glTransformFeedbackVaryings,
  "_glGetShaderSource": _glGetShaderSource,
  "_emscripten_glViewport": _emscripten_glViewport,
@@ -18392,7 +18428,7 @@ Module.asmLibraryArg = {
  "_SDL_CloseAudio": _SDL_CloseAudio,
  "___gxx_personality_v0": ___gxx_personality_v0,
  "_emscripten_get_fullscreen_status": _emscripten_get_fullscreen_status,
- "_emscripten_set_touchend_callback": _emscripten_set_touchend_callback,
+ "_glVertexAttribPointer": _glVertexAttribPointer,
  "_pthread_cond_signal": _pthread_cond_signal,
  "_glGenRenderbuffers": _glGenRenderbuffers,
  "_emscripten_glSampleCoverage": _emscripten_glSampleCoverage,
@@ -18970,12 +19006,6 @@ asm["__GLOBAL__sub_I_GenericMetadata_cpp"] = (function() {
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_GenericMetadata_cpp.apply(null, arguments);
 });
-var real___GLOBAL__sub_I_Runtime_cpp_66073 = asm["__GLOBAL__sub_I_Runtime_cpp_66073"];
-asm["__GLOBAL__sub_I_Runtime_cpp_66073"] = (function() {
- assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
- assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return real___GLOBAL__sub_I_Runtime_cpp_66073.apply(null, arguments);
-});
 var real___GLOBAL__sub_I_runtime_virtualfilesystem_archivefilesystem_0_cpp = asm["__GLOBAL__sub_I_runtime_virtualfilesystem_archivefilesystem_0_cpp"];
 asm["__GLOBAL__sub_I_runtime_virtualfilesystem_archivefilesystem_0_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
@@ -19059,6 +19089,12 @@ asm["__GLOBAL__sub_I_modules_terrain_public_1_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_modules_terrain_public_1_cpp.apply(null, arguments);
+});
+var real___GLOBAL__sub_I_Runtime_cpp_73187 = asm["__GLOBAL__sub_I_Runtime_cpp_73187"];
+asm["__GLOBAL__sub_I_Runtime_cpp_73187"] = (function() {
+ assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
+ assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
+ return real___GLOBAL__sub_I_Runtime_cpp_73187.apply(null, arguments);
 });
 var real___GLOBAL__sub_I_MemoryMappedFile_cpp = asm["__GLOBAL__sub_I_MemoryMappedFile_cpp"];
 asm["__GLOBAL__sub_I_MemoryMappedFile_cpp"] = (function() {
@@ -19366,6 +19402,12 @@ asm["__GLOBAL__sub_I_SwCollision_cpp"] = (function() {
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_SwCollision_cpp.apply(null, arguments);
 });
+var real___GLOBAL__sub_I_Thread_cpp_71977 = asm["__GLOBAL__sub_I_Thread_cpp_71977"];
+asm["__GLOBAL__sub_I_Thread_cpp_71977"] = (function() {
+ assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
+ assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
+ return real___GLOBAL__sub_I_Thread_cpp_71977.apply(null, arguments);
+});
 var real___GLOBAL__sub_I_modules_unitywebrequest_public_downloadhandler_0_cpp = asm["__GLOBAL__sub_I_modules_unitywebrequest_public_downloadhandler_0_cpp"];
 asm["__GLOBAL__sub_I_modules_unitywebrequest_public_downloadhandler_0_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
@@ -19407,6 +19449,12 @@ asm["___remdi3"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real____remdi3.apply(null, arguments);
+});
+var real___GLOBAL__sub_I_Assembly_cpp_72618 = asm["__GLOBAL__sub_I_Assembly_cpp_72618"];
+asm["__GLOBAL__sub_I_Assembly_cpp_72618"] = (function() {
+ assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
+ assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
+ return real___GLOBAL__sub_I_Assembly_cpp_72618.apply(null, arguments);
 });
 var real___GLOBAL__sub_I_runtime_ui_0_cpp = asm["__GLOBAL__sub_I_runtime_ui_0_cpp"];
 asm["__GLOBAL__sub_I_runtime_ui_0_cpp"] = (function() {
@@ -19642,12 +19690,6 @@ asm["__GLOBAL__sub_I_runtime_core_callbacks_0_cpp"] = (function() {
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_runtime_core_callbacks_0_cpp.apply(null, arguments);
 });
-var real___GLOBAL__sub_I_Assembly_cpp_65504 = asm["__GLOBAL__sub_I_Assembly_cpp_65504"];
-asm["__GLOBAL__sub_I_Assembly_cpp_65504"] = (function() {
- assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
- assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return real___GLOBAL__sub_I_Assembly_cpp_65504.apply(null, arguments);
-});
 var real___GLOBAL__sub_I_Error_cpp = asm["__GLOBAL__sub_I_Error_cpp"];
 asm["__GLOBAL__sub_I_Error_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
@@ -19761,12 +19803,6 @@ asm["_i64Add"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real__i64Add.apply(null, arguments);
-});
-var real___GLOBAL__sub_I_Thread_cpp_64863 = asm["__GLOBAL__sub_I_Thread_cpp_64863"];
-asm["__GLOBAL__sub_I_Thread_cpp_64863"] = (function() {
- assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
- assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return real___GLOBAL__sub_I_Thread_cpp_64863.apply(null, arguments);
 });
 var real__pthread_self = asm["_pthread_self"];
 asm["_pthread_self"] = (function() {
@@ -20004,7 +20040,6 @@ var _llvm_ctlz_i64 = Module["_llvm_ctlz_i64"] = asm["_llvm_ctlz_i64"];
 var _realloc = Module["_realloc"] = asm["_realloc"];
 var _llvm_cttz_i32 = Module["_llvm_cttz_i32"] = asm["_llvm_cttz_i32"];
 var __GLOBAL__sub_I_GenericMetadata_cpp = Module["__GLOBAL__sub_I_GenericMetadata_cpp"] = asm["__GLOBAL__sub_I_GenericMetadata_cpp"];
-var __GLOBAL__sub_I_Runtime_cpp_66073 = Module["__GLOBAL__sub_I_Runtime_cpp_66073"] = asm["__GLOBAL__sub_I_Runtime_cpp_66073"];
 var __GLOBAL__sub_I_runtime_virtualfilesystem_archivefilesystem_0_cpp = Module["__GLOBAL__sub_I_runtime_virtualfilesystem_archivefilesystem_0_cpp"] = asm["__GLOBAL__sub_I_runtime_virtualfilesystem_archivefilesystem_0_cpp"];
 var __GLOBAL__sub_I_artifacts_generated_webgl_modules_vr_0_cpp = Module["__GLOBAL__sub_I_artifacts_generated_webgl_modules_vr_0_cpp"] = asm["__GLOBAL__sub_I_artifacts_generated_webgl_modules_vr_0_cpp"];
 var __GLOBAL__sub_I_runtime_scripting_2_cpp = Module["__GLOBAL__sub_I_runtime_scripting_2_cpp"] = asm["__GLOBAL__sub_I_runtime_scripting_2_cpp"];
@@ -20019,6 +20054,7 @@ var _ntohs = Module["_ntohs"] = asm["_ntohs"];
 var __GLOBAL__sub_I_runtime_transform_0_cpp = Module["__GLOBAL__sub_I_runtime_transform_0_cpp"] = asm["__GLOBAL__sub_I_runtime_transform_0_cpp"];
 var __GLOBAL__sub_I_runtime_allocator_2_cpp = Module["__GLOBAL__sub_I_runtime_allocator_2_cpp"] = asm["__GLOBAL__sub_I_runtime_allocator_2_cpp"];
 var __GLOBAL__sub_I_modules_terrain_public_1_cpp = Module["__GLOBAL__sub_I_modules_terrain_public_1_cpp"] = asm["__GLOBAL__sub_I_modules_terrain_public_1_cpp"];
+var __GLOBAL__sub_I_Runtime_cpp_73187 = Module["__GLOBAL__sub_I_Runtime_cpp_73187"] = asm["__GLOBAL__sub_I_Runtime_cpp_73187"];
 var __GLOBAL__sub_I_MemoryMappedFile_cpp = Module["__GLOBAL__sub_I_MemoryMappedFile_cpp"] = asm["__GLOBAL__sub_I_MemoryMappedFile_cpp"];
 var __GLOBAL__sub_I_runtime_vr_1_cpp = Module["__GLOBAL__sub_I_runtime_vr_1_cpp"] = asm["__GLOBAL__sub_I_runtime_vr_1_cpp"];
 var __GLOBAL__sub_I_runtime_particlesystem_modules_2_cpp = Module["__GLOBAL__sub_I_runtime_particlesystem_modules_2_cpp"] = asm["__GLOBAL__sub_I_runtime_particlesystem_modules_2_cpp"];
@@ -20071,6 +20107,7 @@ var _i64Subtract = Module["_i64Subtract"] = asm["_i64Subtract"];
 var __GLOBAL__sub_I_runtime_profiler_0_cpp = Module["__GLOBAL__sub_I_runtime_profiler_0_cpp"] = asm["__GLOBAL__sub_I_runtime_profiler_0_cpp"];
 var __GLOBAL__sub_I_runtime_ai_internal_builder_0_cpp = Module["__GLOBAL__sub_I_runtime_ai_internal_builder_0_cpp"] = asm["__GLOBAL__sub_I_runtime_ai_internal_builder_0_cpp"];
 var __GLOBAL__sub_I_SwCollision_cpp = Module["__GLOBAL__sub_I_SwCollision_cpp"] = asm["__GLOBAL__sub_I_SwCollision_cpp"];
+var __GLOBAL__sub_I_Thread_cpp_71977 = Module["__GLOBAL__sub_I_Thread_cpp_71977"] = asm["__GLOBAL__sub_I_Thread_cpp_71977"];
 var __GLOBAL__sub_I_modules_unitywebrequest_public_downloadhandler_0_cpp = Module["__GLOBAL__sub_I_modules_unitywebrequest_public_downloadhandler_0_cpp"] = asm["__GLOBAL__sub_I_modules_unitywebrequest_public_downloadhandler_0_cpp"];
 var __GLOBAL__sub_I_runtime_camera_3_cpp = Module["__GLOBAL__sub_I_runtime_camera_3_cpp"] = asm["__GLOBAL__sub_I_runtime_camera_3_cpp"];
 var _llvm_bswap_i16 = Module["_llvm_bswap_i16"] = asm["_llvm_bswap_i16"];
@@ -20078,6 +20115,7 @@ var __GLOBAL__sub_I_PxsFluidDynamics_cpp = Module["__GLOBAL__sub_I_PxsFluidDynam
 var __GLOBAL__sub_I_runtime_baseclasses_0_cpp = Module["__GLOBAL__sub_I_runtime_baseclasses_0_cpp"] = asm["__GLOBAL__sub_I_runtime_baseclasses_0_cpp"];
 var __GLOBAL__sub_I_runtime_scenemanager_0_cpp = Module["__GLOBAL__sub_I_runtime_scenemanager_0_cpp"] = asm["__GLOBAL__sub_I_runtime_scenemanager_0_cpp"];
 var ___remdi3 = Module["___remdi3"] = asm["___remdi3"];
+var __GLOBAL__sub_I_Assembly_cpp_72618 = Module["__GLOBAL__sub_I_Assembly_cpp_72618"] = asm["__GLOBAL__sub_I_Assembly_cpp_72618"];
 var __GLOBAL__sub_I_runtime_ui_0_cpp = Module["__GLOBAL__sub_I_runtime_ui_0_cpp"] = asm["__GLOBAL__sub_I_runtime_ui_0_cpp"];
 var __GLOBAL__sub_I_artifacts_generated_webgl_modules_imgui_0_cpp = Module["__GLOBAL__sub_I_artifacts_generated_webgl_modules_imgui_0_cpp"] = asm["__GLOBAL__sub_I_artifacts_generated_webgl_modules_imgui_0_cpp"];
 var _pthread_cond_broadcast = Module["_pthread_cond_broadcast"] = asm["_pthread_cond_broadcast"];
@@ -20117,7 +20155,6 @@ var _bitshift64Shl = Module["_bitshift64Shl"] = asm["_bitshift64Shl"];
 var __GLOBAL__sub_I_runtime_animation_3_cpp = Module["__GLOBAL__sub_I_runtime_animation_3_cpp"] = asm["__GLOBAL__sub_I_runtime_animation_3_cpp"];
 var __GLOBAL__sub_I_LineRenderer_cpp = Module["__GLOBAL__sub_I_LineRenderer_cpp"] = asm["__GLOBAL__sub_I_LineRenderer_cpp"];
 var __GLOBAL__sub_I_runtime_core_callbacks_0_cpp = Module["__GLOBAL__sub_I_runtime_core_callbacks_0_cpp"] = asm["__GLOBAL__sub_I_runtime_core_callbacks_0_cpp"];
-var __GLOBAL__sub_I_Assembly_cpp_65504 = Module["__GLOBAL__sub_I_Assembly_cpp_65504"] = asm["__GLOBAL__sub_I_Assembly_cpp_65504"];
 var __GLOBAL__sub_I_Error_cpp = Module["__GLOBAL__sub_I_Error_cpp"] = asm["__GLOBAL__sub_I_Error_cpp"];
 var __GLOBAL__sub_I_runtime_scripting_0_cpp = Module["__GLOBAL__sub_I_runtime_scripting_0_cpp"] = asm["__GLOBAL__sub_I_runtime_scripting_0_cpp"];
 var __GLOBAL__sub_I_modules_video_public_base_0_cpp = Module["__GLOBAL__sub_I_modules_video_public_base_0_cpp"] = asm["__GLOBAL__sub_I_modules_video_public_base_0_cpp"];
@@ -20137,7 +20174,6 @@ var __GLOBAL__sub_I_runtime_geometry_2_cpp = Module["__GLOBAL__sub_I_runtime_geo
 var _htonl = Module["_htonl"] = asm["_htonl"];
 var __GLOBAL__sub_I_runtime_animation_2_cpp = Module["__GLOBAL__sub_I_runtime_animation_2_cpp"] = asm["__GLOBAL__sub_I_runtime_animation_2_cpp"];
 var _i64Add = Module["_i64Add"] = asm["_i64Add"];
-var __GLOBAL__sub_I_Thread_cpp_64863 = Module["__GLOBAL__sub_I_Thread_cpp_64863"] = asm["__GLOBAL__sub_I_Thread_cpp_64863"];
 var _pthread_self = Module["_pthread_self"] = asm["_pthread_self"];
 var _pthread_mutex_unlock = Module["_pthread_mutex_unlock"] = asm["_pthread_mutex_unlock"];
 var __GLOBAL__sub_I_runtime_virtualfilesystem_0_cpp = Module["__GLOBAL__sub_I_runtime_virtualfilesystem_0_cpp"] = asm["__GLOBAL__sub_I_runtime_virtualfilesystem_0_cpp"];
